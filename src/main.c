@@ -18,30 +18,14 @@
  *
  ********************************************************************************************/
 
+#include "constants.h"
+#include "player.h"
 #include "raylib.h"
 #include "raymath.h"
-
-#define G 400
-#define PLAYER_JUMP_SPD 350.0f
-#define PLAYER_HOR_SPD 200.0f
-
-typedef struct Player {
-  Vector2 position;
-  float speed;
-  bool canJump;
-} Player;
-
-typedef struct EnvItem {
-  Rectangle rect;
-  int blocking;
-  Color color;
-} EnvItem;
 
 //----------------------------------------------------------------------------------
 // Module functions declaration
 //----------------------------------------------------------------------------------
-void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength,
-                  float delta);
 void UpdateCameraCenter(Camera2D *camera, Player *player, EnvItem *envItems,
                         int envItemsLength, float delta, int width, int height);
 void UpdateCameraCenterInsideMap(Camera2D *camera, Player *player,
@@ -81,9 +65,8 @@ int main(void) {
   int framesSpeed = 4; // Number of spritesheet frames shown by second
 
   Player player = {0};
-  player.position = (Vector2){400, 280};
-  player.speed = 0;
-  player.canJump = false;
+  initPlayer(&player);
+
   EnvItem envItems[] = {{{0, 0, 1000, 400}, 0, LIGHTGRAY},
                         {{0, 400, 1000, 200}, 1, GRAY},
                         {{300, 200, 400, 10}, 1, GRAY},
@@ -138,7 +121,7 @@ int main(void) {
       // frameRec.x = (float)currentFrame * (float)texture.width / 6;
     }
 
-    UpdatePlayer(&player, envItems, envItemsLength, deltaTime);
+    updatePlayer(&player, envItems, envItemsLength, deltaTime);
 
     camera.zoom += ((float)GetMouseWheelMove() * 0.05f);
 
@@ -173,7 +156,6 @@ int main(void) {
 
     Rectangle playerRect = {player.position.x - 20, player.position.y - 40,
                             40.0f, 40.0f};
-    // DrawRectangleRec(playerRect, RED);
 
     Vector2 texPos = {player.position.x - (frameRec.width / 2),
                       player.position.y - frameRec.height};
@@ -203,39 +185,6 @@ int main(void) {
   //--------------------------------------------------------------------------------------
 
   return 0;
-}
-
-void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength,
-                  float delta) {
-  if (IsKeyDown(KEY_LEFT))
-    player->position.x -= PLAYER_HOR_SPD * delta;
-  if (IsKeyDown(KEY_RIGHT))
-    player->position.x += PLAYER_HOR_SPD * delta;
-  if (IsKeyDown(KEY_SPACE) && player->canJump) {
-    player->speed = -PLAYER_JUMP_SPD;
-    player->canJump = false;
-  }
-
-  bool hitObstacle = false;
-  for (int i = 0; i < envItemsLength; i++) {
-    EnvItem *ei = envItems + i;
-    Vector2 *p = &(player->position);
-    if (ei->blocking && ei->rect.x <= p->x &&
-        ei->rect.x + ei->rect.width >= p->x && ei->rect.y >= p->y &&
-        ei->rect.y <= p->y + player->speed * delta) {
-      hitObstacle = true;
-      player->speed = 0.0f;
-      p->y = ei->rect.y;
-      break;
-    }
-  }
-
-  if (!hitObstacle) {
-    player->position.y += player->speed * delta;
-    player->speed += G * delta;
-    player->canJump = false;
-  } else
-    player->canJump = true;
 }
 
 void UpdateCameraCenter(Camera2D *camera, Player *player, EnvItem *envItems,
